@@ -32,7 +32,19 @@ def check_throttle(
     min_interval_seconds: int,
     db_path: str,
 ) -> ThrottleResult:
-    """Return a ThrottleResult indicating whether the job may run."""
+    """Return a ThrottleResult indicating whether the job may run.
+
+    Args:
+        job_name: Unique identifier for the job being checked.
+        min_interval_seconds: Minimum number of seconds that must have elapsed
+            since the last run before the job is allowed to execute again.
+        db_path: Path to the SQLite database used to look up run history.
+
+    Returns:
+        A ThrottleResult with ``allowed=True`` if no run exists within the
+        throttle window, or ``allowed=False`` along with the seconds remaining
+        until the job may next execute.
+    """
     records = get_recent_runs(job_name, limit=1, db_path=db_path)
     if not records:
         return ThrottleResult(
