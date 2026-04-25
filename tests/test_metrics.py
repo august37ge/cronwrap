@@ -16,6 +16,7 @@ def db_path(tmp_path):
 
 
 def _rec(job_name, exit_code, duration):
+    """Create a JobRecord with sensible defaults for testing."""
     return JobRecord(
         job_name=job_name,
         started_at="2024-01-01T00:00:00",
@@ -59,6 +60,18 @@ def test_success_rate(db_path):
 
     m = get_job_metrics(db_path, "job")
     assert m.success_rate == 75.0
+
+
+def test_success_rate_all_failures(db_path):
+    """Ensure success_rate is 0.0 when every run has failed."""
+    for _ in range(3):
+        record_run(db_path, _rec("failing_job", 1, 1.0))
+
+    m = get_job_metrics(db_path, "failing_job")
+    assert m is not None
+    assert m.success_rate == 0.0
+    assert m.failed_runs == 3
+    assert m.successful_runs == 0
 
 
 def test_get_all_job_metrics(db_path):
