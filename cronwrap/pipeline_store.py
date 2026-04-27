@@ -76,3 +76,25 @@ def get_pipeline_runs(
     params.append(limit)
     with _connect(db_path) as conn:
         return conn.execute(sql, params).fetchall()
+
+
+def delete_pipeline_runs(db_path: str, pipeline: str, keep: int = 50) -> int:
+    """Delete old runs for *pipeline*, retaining the *keep* most recent ones.
+
+    Returns the number of rows deleted.
+    """
+    with _connect(db_path) as conn:
+        cur = conn.execute(
+            """
+            DELETE FROM pipeline_runs
+            WHERE pipeline = ?
+              AND id NOT IN (
+                  SELECT id FROM pipeline_runs
+                  WHERE pipeline = ?
+                  ORDER BY ran_at DESC
+                  LIMIT ?
+              )
+            """,
+            (pipeline, pipeline, keep),
+        )
+        return cur.rowcount
